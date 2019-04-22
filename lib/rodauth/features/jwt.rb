@@ -27,7 +27,8 @@ module Rodauth
     auth_value_methods(
       :only_json?,
       :jwt_secret,
-      :use_jwt?
+      :use_jwt?,
+      :use_json?
     )
 
     auth_methods(
@@ -77,27 +78,27 @@ module Rodauth
     end
 
     def set_field_error(field, message)
-      return super unless use_jwt?
+      return super unless use_json?
       json_response[json_response_field_error_key] = [field, message]
     end
 
     def set_error_flash(message)
-      return super unless use_jwt?
+      return super unless use_json?
       json_response[json_response_error_key] = message
     end
 
     def set_redirect_error_flash(message)
-      return super unless use_jwt?
+      return super unless use_json?
       json_response[json_response_error_key] = message
     end
 
     def set_notice_flash(message)
-      return super unless use_jwt?
+      return super unless use_json?
       json_response[json_response_success_key] = message if include_success_messages?
     end
 
     def set_notice_now_flash(message)
-      return super unless use_jwt?
+      return super unless use_json?
       json_response[json_response_success_key] = message if include_success_messages?
     end
 
@@ -131,7 +132,11 @@ module Rodauth
     end
 
     def use_jwt?
-      jwt_token || only_json? || json_request?
+      jwt_token || use_json?
+    end
+
+    def use_json?
+      only_json? || json_request?
     end
 
     def valid_jwt?
@@ -167,7 +172,7 @@ module Rodauth
 
     def before_view_recovery_codes
       super if defined?(super)
-      if use_jwt?
+      if use_json?
         json_response[:codes] = recovery_codes
         json_response[json_response_success_key] ||= "" if include_success_messages?
       end
@@ -175,7 +180,7 @@ module Rodauth
 
     def before_otp_setup_route
       super if defined?(super)
-      if use_jwt? && otp_keys_use_hmac? && !param_or_nil(otp_setup_raw_param)
+      if use_json? && otp_keys_use_hmac? && !param_or_nil(otp_setup_raw_param)
         _otp_tmp_key(otp_new_secret)
         json_response[otp_setup_param] = otp_user_key
         json_response[otp_setup_raw_param] = otp_key
@@ -190,7 +195,7 @@ module Rodauth
     end
 
     def redirect(_)
-      return super unless use_jwt?
+      return super unless use_json?
       return_json_response
     end
 
@@ -209,7 +214,7 @@ module Rodauth
     end
 
     def _view(meth, page)
-      return super unless use_jwt?
+      return super unless use_json?
       return super if meth == :render
       return_json_response
     end
@@ -231,13 +236,13 @@ module Rodauth
     end
 
     def set_redirect_error_status(status)
-      if use_jwt? && json_response_custom_error_status?
+      if use_json? && json_response_custom_error_status?
         response.status = status
       end
     end
 
     def set_response_error_status(status)
-      if use_jwt? && !json_response_custom_error_status?
+      if use_json? && !json_response_custom_error_status?
         status = json_response_error_status
       end
 
